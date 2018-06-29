@@ -1,0 +1,27 @@
+{{>partial_header}}
+package {{packageName}}_mock
+
+{{#operations}}
+import (
+	"{{packageRoot}}"
+	"github.com/stretchr/testify/mock"
+	"testing"
+)
+
+type {{classname}}Mock struct {
+	*mock.Mock
+}
+
+{{#operation}}
+func (a *{{{classname}}}Mock) {{{nickname}}}(ctx context.Context{{#hasParams}}, {{/hasParams}}{{#allParams}}{{#required}}{{paramName}} {{{dataType}}}{{#hasMore}}, {{/hasMore}}{{/required}}{{/allParams}}{{#hasOptionalParams}}localVarOptionals *{{packageName}}.{{{nickname}}}Opts{{/hasOptionalParams}}) ({{#returnType}}{{packageName}}.{{{returnType}}}, {{/returnType}}error) {
+	args := a.Called({{#allParams}}{{#required}}{{paramName}}{{#hasMore}}, {{/hasMore}}{{/required}}{{/allParams}}{{#hasOptionalParams}}localVarOptionals{{/hasOptionalParams}})
+	{{#returnType}}
+	return args.Get(0).({{packageName}}.{{returnType}}), args.Error(1)
+	{{/returnType}}
+	{{^returnType}}
+	return args.Error(0)
+	{{/returnType}}
+}
+
+{{/operation}}
+{{/operations}}

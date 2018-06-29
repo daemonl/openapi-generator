@@ -45,6 +45,10 @@ public class GoClientOptionsProvider implements OptionsProvider {
                 .put(CodegenConstants.HIDE_GENERATION_TIMESTAMP, "true")
                 .put(CodegenConstants.WITH_XML, "true")
                 .put(CodegenConstants.PREPEND_FORM_OR_BODY_PARAMETERS, "true")
+                .put(GoClientCodegen.INTERFACES, "true")
+                .put(GoClientCodegen.RETURN_HTTP_RESPONSES, "false")
+                .put(GoClientCodegen.PACKAGE_ROOT, "github.com/some/project")
+                .put(GoClientCodegen.TESTIFY_MOCK, "true")
                 .build();
     }
 

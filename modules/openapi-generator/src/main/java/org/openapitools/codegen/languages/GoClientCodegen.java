@@ -30,7 +30,14 @@ public class GoClientCodegen extends AbstractGoCodegen {
     protected String packageVersion = "1.0.0";
     protected String apiDocPath = "docs/";
     protected String modelDocPath = "docs/";
+    protected String packageRoot = "";
+    protected Boolean testifyMock;
+
     public static final String WITH_XML = "withXml";
+    public static final String INTERFACES = "interfaces";
+    public static final String RETURN_HTTP_RESPONSES = "httpResponse";
+    public static final String TESTIFY_MOCK = "testifyMock";
+    public static final String PACKAGE_ROOT = "packageRoot";
 
     public GoClientCodegen() {
         super();
@@ -57,6 +64,26 @@ public class GoClientCodegen extends AbstractGoCodegen {
                 CodegenConstants.PREPEND_FORM_OR_BODY_PARAMETERS_DESC)
                 .defaultValue(Boolean.FALSE.toString()));
 
+        cliOptions.add(CliOption.newBoolean(
+                INTERFACES,
+                "Main types are Interfaces instead of concrete implementations")
+                .defaultValue(Boolean.FALSE.toString()));
+        
+        cliOptions.add(CliOption.newBoolean(
+                RETURN_HTTP_RESPONSES,
+                "Include the raw *http.Response in methods. Default is true.")
+                .defaultValue(Boolean.TRUE.toString()));
+
+        cliOptions.add(CliOption.newBoolean(
+            TESTIFY_MOCK,
+            "Include a testify mock stub for the API clients. Requires " + INTERFACES + "=true and " + RETURN_HTTP_RESPONSES + "=false")
+            .defaultValue(Boolean.FALSE.toString()));
+
+        cliOptions.add(CliOption.newString(
+            PACKAGE_ROOT,
+            "Sets the import path for the parent of the main generated package, for use with " + TESTIFY_MOCK + " so that the mock package can find it")
+            .defaultValue(""));
+
     }
 
     @Override
@@ -67,6 +94,18 @@ public class GoClientCodegen extends AbstractGoCodegen {
             setPackageName((String) additionalProperties.get(CodegenConstants.PACKAGE_NAME));
         } else {
             setPackageName("openapi");
+        }
+        
+        if (additionalProperties.containsKey(PACKAGE_ROOT)) {
+            setPackageRoot((String) additionalProperties.get(PACKAGE_ROOT));
+        } else {
+            setPackageRoot("");
+        }
+        
+        if (additionalProperties.containsKey(TESTIFY_MOCK)) {
+            setTestifyMock(Boolean.parseBoolean(additionalProperties.get(TESTIFY_MOCK).toString()));
+        } else {
+            setTestifyMock(false);
         }
 
         if (additionalProperties.containsKey(CodegenConstants.PACKAGE_VERSION)) {
@@ -93,11 +132,23 @@ public class GoClientCodegen extends AbstractGoCodegen {
         supportingFiles.add(new SupportingFile("response.mustache", "", "response.go"));
         supportingFiles.add(new SupportingFile(".travis.yml", "", ".travis.yml"));
 
+        if (testifyMock) {
+            supportingFiles.add(new SupportingFile("client_mock.mustache", apiPackage + "_mock", "client_mock.go")); 
+            apiTemplateFiles.put("api_mock.mustache", ".go");
+        }
         if (additionalProperties.containsKey(WITH_XML)) {
             setWithXml(Boolean.parseBoolean(additionalProperties.get(WITH_XML).toString()));
             if (withXml) {
                 additionalProperties.put(WITH_XML, "true");
             }
+        }
+    }
+
+    public String apiFilename(String templateName, String tag) {
+        if (templateName.equals("api_mock.mustache")) {
+            return apiFileFolder() + File.separator + apiPackage + "_mock" + File.separator + toApiFilename(tag) + ".go";
+        } else {
+            return apiFileFolder() + File.separator + toApiFilename(tag) + ".go";
         }
     }
 
@@ -172,4 +223,11 @@ public class GoClientCodegen extends AbstractGoCodegen {
         this.packageVersion = packageVersion;
     }
 
+    public void setPackageRoot(String packageRoot) {
+        this.packageRoot = packageRoot;
+    }
+
+    public void setTestifyMock(Boolean testifyMock) {
+        this.testifyMock = testifyMock;
+    }
 }

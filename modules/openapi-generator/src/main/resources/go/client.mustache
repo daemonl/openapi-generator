@@ -29,9 +29,21 @@ var (
 	xmlCheck  = regexp.MustCompile("(?i:[application|text]/xml)")
 )
 
-// APIClient manages communication with the {{appName}} API v{{version}}
-// In most cases there should be only one, shared, APIClient.
-type APIClient struct {
+{{#interfaces}}
+type Service interface {
+{{#apiInfo}}
+{{#apis}}
+{{#operations}}
+	{{classname}}Service
+{{/operations}}
+{{/apis}}
+{{/apiInfo}}
+}
+{{/interfaces}}
+
+// {{#interfaces}}HTTP{{/interfaces}}{{^interfaces}}API{{/interfaces}}Client manages communication with the {{appName}} API v{{version}}
+// In most cases there should be only one, shared, client.
+type {{#interfaces}}HTTP{{/interfaces}}{{^interfaces}}API{{/interfaces}}Client struct {
 	cfg    *Configuration
 	common service // Reuse a single struct instead of allocating one for each service on the heap.
 
@@ -47,17 +59,17 @@ type APIClient struct {
 }
 
 type service struct {
-	client *APIClient
+	client *{{#interfaces}}HTTP{{/interfaces}}{{^interfaces}}API{{/interfaces}}Client
 }
 
-// NewAPIClient creates a new API client. Requires a userAgent string describing your application.
+// New{{#interfaces}}HTTP{{/interfaces}}{{^interfaces}}API{{/interfaces}}Client creates a new API client. Requires a userAgent string describing your application.
 // optionally a custom http.Client to allow for advanced features such as caching.
-func NewAPIClient(cfg *Configuration) *APIClient {
+func New{{#interfaces}}HTTP{{/interfaces}}{{^interfaces}}API{{/interfaces}}Client(cfg *Configuration) *{{#interfaces}}HTTP{{/interfaces}}{{^interfaces}}API{{/interfaces}}Client {
 	if cfg.HTTPClient == nil {
 		cfg.HTTPClient = http.DefaultClient
 	}
 
-	c := &APIClient{}
+	c := &{{#interfaces}}HTTP{{/interfaces}}{{^interfaces}}API{{/interfaces}}Client{}
 	c.cfg = cfg
 	c.common.client = c
 
@@ -148,17 +160,17 @@ func parameterToString(obj interface{}, collectionFormat string) string {
 }
 
 // callAPI do the request.
-func (c *APIClient) callAPI(request *http.Request) (*http.Response, error) {
+func (c *{{#interfaces}}HTTP{{/interfaces}}{{^interfaces}}API{{/interfaces}}Client) callAPI(request *http.Request) (*http.Response, error) {
 	return c.cfg.HTTPClient.Do(request)
 }
 
 // Change base path to allow switching to mocks
-func (c *APIClient) ChangeBasePath(path string) {
+func (c *{{#interfaces}}HTTP{{/interfaces}}{{^interfaces}}API{{/interfaces}}Client) ChangeBasePath(path string) {
 	c.cfg.BasePath = path
 }
 
 // prepareRequest build the request
-func (c *APIClient) prepareRequest(
+func (c *{{#interfaces}}HTTP{{/interfaces}}{{^interfaces}}API{{/interfaces}}Client) prepareRequest(
 	ctx context.Context,
 	path string, method string,
 	postBody interface{},
@@ -303,7 +315,7 @@ func (c *APIClient) prepareRequest(
 	return localVarRequest, nil
 }
 
-func (c *APIClient) decode(v interface{}, b []byte, contentType string) (err error) {
+func (c *{{#interfaces}}HTTP{{/interfaces}}{{^interfaces}}API{{/interfaces}}Client) decode(v interface{}, b []byte, contentType string) (err error) {
 		if strings.Contains(contentType, "application/xml") {
 			if err = xml.Unmarshal(b, v); err != nil {
 				return err
